@@ -1,72 +1,42 @@
-const express = require('express')
-const app = express()
-const db = require('@cyclic.sh/dynamodb')
+const functions = require("firebase-functions");
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+const express = require('express'),
+cors = require('cors'),
+app = express(),
+port = 3000;
 
-// #############################################################################
-// This configures static hosting for files in /public that have the extensions
-// listed in the array.
-// var options = {
-//   dotfiles: 'ignore',
-//   etag: false,
-//   extensions: ['htm', 'html','css','js','ico','jpg','jpeg','png','svg'],
-//   index: ['index.html'],
-//   maxAge: '1m',
-//   redirect: false
-// }
-// app.use(express.static('public', options))
-// #############################################################################
+bodyParser = require('body-parser');
 
-// Create or Update an item
-app.post('/:col/:key', async (req, res) => {
-  console.log(req.body)
 
-  const col = req.params.col
-  const key = req.params.key
-  console.log(`from collection: ${col} delete key: ${key} with params ${JSON.stringify(req.params)}`)
-  const item = await db.collection(col).set(key, req.body)
-  console.log(JSON.stringify(item, null, 2))
-  res.json(item).end()
-})
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 
-// Delete an item
-app.delete('/:col/:key', async (req, res) => {
-  const col = req.params.col
-  const key = req.params.key
-  console.log(`from collection: ${col} delete key: ${key} with params ${JSON.stringify(req.params)}`)
-  const item = await db.collection(col).delete(key)
-  console.log(JSON.stringify(item, null, 2))
-  res.json(item).end()
-})
+const mongoose = require('mongoose');
+const pizzaRoute = require ("./schemas/pizza/pizza.route")
+const saladRoute = require ("./schemas/salad/salad.route")
+const grinderRoute = require ("./schemas/grinder/grinder.route")
+const pastaRoute = require ("./schemas/pasta/pasta.route")
+const appetizerRoute = require ("./schemas/appetizers/appetizers.route")
 
-// Get a single item
-app.get('/:col/:key', async (req, res) => {
-  const col = req.params.col
-  const key = req.params.key
-  console.log(`from collection: ${col} get key: ${key} with params ${JSON.stringify(req.params)}`)
-  const item = await db.collection(col).get(key)
-  console.log(JSON.stringify(item, null, 2))
-  res.json(item).end()
-})
+// Connect to the database
+mongoose.connect('mongodb://admin:ksVwrmYWOV8NVYna51cSOhMC@MongoS3601A.back4app.com:27017/df7381e30ae94fcf88c77977734ae5af', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
 
-// Get a full listing
-app.get('/:col', async (req, res) => {
-  const col = req.params.col
-  console.log(`list collection: ${col} with params: ${JSON.stringify(req.params)}`)
-  const items = await db.collection(col).list()
-  console.log(JSON.stringify(items, null, 2))
-  res.json(items).end()
-})
 
-// Catch all handler for all other request.
-app.use('*', (req, res) => {
-  res.json({ msg: 'no route handler found' }).end()
-})
+app.use(cors())
 
-// Start the server
-const port = process.env.PORT || 3000
+app.use ('/pizza', pizzaRoute)
+app.use ('/salad', saladRoute)
+app.use ('/grinder', grinderRoute)
+app.use ('/pasta', pastaRoute)
+app.use ('/appetizers', appetizerRoute)
+
 app.listen(port, () => {
-  console.log(`index.js listening on ${port}`)
-})
+    console.log(`Server listening on port ${port}`);
+  });
+
+exports.app = functions.https.onRequest(app);
